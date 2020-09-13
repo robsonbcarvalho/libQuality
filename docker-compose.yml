@@ -1,0 +1,44 @@
+version: '3.3'
+
+volumes:
+  mongo_data_dev: {}
+  mongo_backup_dev: {}
+
+services:
+  mongo:
+    container_name: lib-quality-db
+    image: mongo
+    build: ./compose/mongo
+    volumes:
+      - mongo_data_dev:/data/db
+      - mongo_backup_dev:/backups
+    ports:
+      - "27017:27017"
+  lib_quality:
+    container_name: lib-quality-service
+    image: api-lib_quality
+    entrypoint:
+      - npm
+      - start
+    build:
+      context: .
+      dockerfile: ./compose/nodejs/Dockerfile
+    depends_on:
+      - mongo
+    environment:
+      - USE_DOCKER=yes
+      - NODE_ENV=${NODE_ENV}
+      - PORT=3000
+      - APP_NAME=LibQuality
+      - API_VERSION=v1
+      - MOCK_STATUS=true
+      - MONGODB_HOST=mongo
+      - MONGODB_PORT=27017
+      - ISSUES_DB=lib_quality
+      - ISSUES_COLLECTION=issues
+      - LIB_SEARCHES_COLLECTION=issues_searches
+      - GITHUB_BASE_URL=https://api.github.com
+    ports:
+      - "3000:3000"
+    links:
+      - mongo
